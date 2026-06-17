@@ -32,9 +32,12 @@
               {{ $t("login.welcome") }}
             </div>
 
-            <!-- 语言切换下拉菜单 -->
-            <el-dropdown trigger="click" class="title-language-dropdown"
-              @visible-change="handleLanguageDropdownVisibleChange">
+            <!-- Language selector -->
+            <el-dropdown
+              trigger="click"
+              class="title-language-dropdown"
+              @visible-change="handleLanguageDropdownVisibleChange"
+            >
               <span class="el-dropdown-link">
                 <span class="current-language-text">{{ currentLanguageText }}</span>
                 <i class="el-icon-arrow-down el-icon--right" :class="{ 'rotate-down': languageDropdownVisible }"></i>
@@ -62,7 +65,6 @@
             </el-dropdown>
           </div>
           <div style="padding: 0 30px">
-            <!-- 用户名登录 -->
             <template v-if="!isMobileLogin">
               <div class="input-box">
                 <img loading="lazy" alt="" class="input-icon" src="@/assets/login/username.png" />
@@ -70,13 +72,16 @@
               </div>
             </template>
 
-            <!-- 手机号登录 -->
             <template v-else>
               <div class="input-box">
                 <div style="display: flex; align-items: center; width: 100%">
                   <el-select v-model="form.areaCode" style="width: 220px; margin-right: 10px">
-                    <el-option v-for="item in mobileAreaList" :key="item.key" :label="`${item.name} (${item.key})`"
-                      :value="item.key" />
+                    <el-option
+                      v-for="item in mobileAreaList"
+                      :key="item.key"
+                      :label="`${item.name} (${item.key})`"
+                      :value="item.key"
+                    />
                   </el-select>
                   <el-input v-model="form.mobile" :placeholder="$t('login.mobilePlaceholder')" />
                 </div>
@@ -85,24 +90,16 @@
 
             <div class="input-box">
               <img loading="lazy" alt="" class="input-icon" src="@/assets/login/password.png" />
-              <el-input v-model="form.password" :placeholder="$t('login.passwordPlaceholder')" type="password"
-                show-password />
+              <el-input
+                v-model="form.password"
+                :placeholder="$t('login.passwordPlaceholder')"
+                type="password"
+                show-password
+              />
             </div>
-            <div style="
-                display: flex;
-                align-items: center;
-                margin-top: 20px;
-                width: 100%;
-                gap: 10px;
-              ">
-              <div class="input-box" style="width: calc(100% - 130px); margin-top: 0">
-                <img loading="lazy" alt="" class="input-icon" src="@/assets/login/shield.png" />
-                <el-input v-model="form.captcha" :placeholder="$t('login.captchaPlaceholder')" style="flex: 1" />
-              </div>
-              <img loading="lazy" v-if="captchaUrl" :src="captchaUrl" alt="验证码"
-                style="width: 150px; height: 40px; cursor: pointer" @click="fetchCaptcha" />
-            </div>
-            <div style="
+
+            <div
+              style="
                 font-weight: 400;
                 font-size: 14px;
                 text-align: left;
@@ -110,7 +107,8 @@
                 display: flex;
                 justify-content: space-between;
                 margin-top: 20px;
-              ">
+              "
+            >
               <div v-if="allowUserRegister" style="cursor: pointer" @click="goToRegister">
                 {{ $t("login.register") }}
               </div>
@@ -121,16 +119,23 @@
           </div>
           <div class="login-btn" @click="login">{{ $t("login.login") }}</div>
 
-          <!-- 登录方式切换按钮 -->
           <div class="login-type-container" v-if="enableMobileRegister">
             <div style="display: flex; gap: 10px">
               <el-tooltip :content="$t('login.mobileLogin')" placement="bottom">
-                <el-button :type="isMobileLogin ? 'primary' : 'default'" icon="el-icon-mobile" circle
-                  @click="switchLoginType('mobile')"></el-button>
+                <el-button
+                  :type="isMobileLogin ? 'primary' : 'default'"
+                  icon="el-icon-mobile"
+                  circle
+                  @click="switchLoginType('mobile')"
+                ></el-button>
               </el-tooltip>
               <el-tooltip :content="$t('login.usernameLogin')" placement="bottom">
-                <el-button :type="!isMobileLogin ? 'primary' : 'default'" icon="el-icon-user" circle
-                  @click="switchLoginType('username')"></el-button>
+                <el-button
+                  :type="!isMobileLogin ? 'primary' : 'default'"
+                  icon="el-icon-user"
+                  circle
+                  @click="switchLoginType('username')"
+                ></el-button>
               </el-tooltip>
             </div>
           </div>
@@ -173,11 +178,9 @@ export default {
       mobileAreaList: (state) => state.pubConfig.mobileAreaList,
       sm2PublicKey: (state) => state.pubConfig.sm2PublicKey,
     }),
-    // 获取当前语言
     currentLanguage() {
       return i18n.locale || "zh_CN";
     },
-    // 获取当前语言显示文本
     currentLanguageText() {
       const currentLang = this.currentLanguage;
       switch (currentLang) {
@@ -197,7 +200,6 @@ export default {
           return this.$t("language.zhCN");
       }
     },
-    // 根据当前语言获取对应的xiaozhi-ai图标
     xiaozhiAiIcon() {
       const currentLang = this.currentLanguage;
       switch (currentLang) {
@@ -222,59 +224,42 @@ export default {
       form: {
         username: "",
         password: "",
-        captcha: "",
         captchaId: "",
         areaCode: "+86",
         mobile: "",
       },
       captchaUuid: "",
-      captchaUrl: "",
       isMobileLogin: false,
       languageDropdownVisible: false,
     };
   },
   mounted() {
-    this.fetchCaptcha();
+    this.initializeLoginState();
     this.$store.dispatch("fetchPubConfig").then(() => {
-      // 根据配置决定默认登录方式
       this.isMobileLogin = this.enableMobileRegister;
     });
   },
   methods: {
     openPage(url) {
-      const lang = this.$i18n ? this.$i18n.locale : 'zh_CN';
-      if (!lang.startsWith('zh')) {
-        url = url.replace('.html', '-en.html');
+      const lang = this.$i18n ? this.$i18n.locale : "zh_CN";
+      if (!lang.startsWith("zh")) {
+        url = url.replace(".html", "-en.html");
       }
-      window.open(url, '_blank');
+      window.open(url, "_blank");
     },
-    fetchCaptcha() {
-      // 处理手动清空localstorage导致无法获取验证码的问题
-      const token = localStorage.getItem('token')
+    initializeLoginState() {
+      const token = localStorage.getItem("token");
       if (token) {
         if (this.$route.path !== "/home") {
           this.$router.push("/home");
         }
       } else {
         this.captchaUuid = getUUID();
-
-        Api.user.getCaptcha(this.captchaUuid, (res) => {
-          if (res.status === 200) {
-            const blob = new Blob([res.data], { type: res.data.type });
-            this.captchaUrl = URL.createObjectURL(blob);
-          } else {
-            showDanger("验证码加载失败，点击刷新");
-          }
-        });
       }
     },
-
-    // 切换语言下拉菜单的可见状态变化
     handleLanguageDropdownVisibleChange(visible) {
       this.languageDropdownVisible = visible;
     },
-
-    // 切换语言
     changeLanguage(lang) {
       changeLanguage(lang);
       this.languageDropdownVisible = false;
@@ -283,19 +268,13 @@ export default {
         showClose: true,
       });
     },
-
-    // 切换登录方式
     switchLoginType(type) {
       this.isMobileLogin = type === "mobile";
-      // 清空表单
       this.form.username = "";
       this.form.mobile = "";
       this.form.password = "";
-      this.form.captcha = "";
-      this.fetchCaptcha();
+      this.initializeLoginState();
     },
-
-    // 封装输入验证逻辑
     validateInput(input, messageKey) {
       if (!input.trim()) {
         showDanger(this.$t(messageKey));
@@ -303,7 +282,6 @@ export default {
       }
       return true;
     },
-    
     getUserInfo() {
       Api.user.getUserInfo(({ data }) => {
         if (data.code === 0) {
@@ -314,81 +292,58 @@ export default {
         }
       });
     },
-
     async login() {
       if (this.isMobileLogin) {
-        // 手机号登录验证
         if (!validateMobile(this.form.mobile, this.form.areaCode)) {
-          showDanger(this.$t('login.requiredMobile'));
+          showDanger(this.$t("login.requiredMobile"));
           return;
         }
-        // 拼接手机号作为用户名
         this.form.username = this.form.areaCode + this.form.mobile;
-      } else {
-        // 用户名登录验证
-        if (!this.validateInput(this.form.username, 'login.requiredUsername')) {
-          return;
-        }
+      } else if (!this.validateInput(this.form.username, "login.requiredUsername")) {
+        return;
       }
 
-      // 验证密码
-      if (!this.validateInput(this.form.password, 'login.requiredPassword')) {
+      if (!this.validateInput(this.form.password, "login.requiredPassword")) {
         return;
       }
-      // 验证验证码
-      if (!this.validateInput(this.form.captcha, 'login.requiredCaptcha')) {
-        return;
-      }
-      // 加密密码
+
       let encryptedPassword;
       try {
-        // 拼接验证码和密码
-        const captchaAndPassword = this.form.captcha + this.form.password;
-        encryptedPassword = sm2Encrypt(this.sm2PublicKey, captchaAndPassword);
+        encryptedPassword = sm2Encrypt(this.sm2PublicKey, this.form.password);
       } catch (error) {
         console.error("密码加密失败:", error);
-        showDanger(this.$t('sm2.encryptionFailed'));
+        showDanger(this.$t("sm2.encryptionFailed"));
         return;
       }
 
       const plainUsername = this.form.username;
-
       this.form.captchaId = this.captchaUuid;
 
-      // 加密
       const loginData = {
         username: plainUsername,
         password: encryptedPassword,
-        captchaId: this.form.captchaId
+        captchaId: this.form.captchaId,
       };
 
       Api.user.login(
         loginData,
         ({ data }) => {
-          showSuccess(this.$t('login.loginSuccess'));
+          showSuccess(this.$t("login.loginSuccess"));
           this.$store.commit("setToken", JSON.stringify(data.data));
           this.getUserInfo();
         },
         (err) => {
-          // 直接使用后端返回的国际化消息
-          let errorMessage = err.data.msg || "登录失败";
-
+          const errorMessage = err.data.msg || "登录失败";
           showDanger(errorMessage);
         }
       );
-
-      // 重新获取验证码
-      setTimeout(() => {
-        this.fetchCaptcha();
-      }, 1000);
     },
-
     goToRegister() {
       goToPage("/register");
     },
     goToForgetPassword() {
       goToPage("/retrieve-password");
-    }
+    },
   },
 };
 </script>

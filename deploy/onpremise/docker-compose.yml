@@ -1,0 +1,117 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: xiaozhi-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      TZ: ${TZ}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ${MYSQL_DATA_DIR}:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: xiaozhi-redis
+    restart: unless-stopped
+    command: >
+      sh -c '
+      if [ -n "$$REDIS_PASSWORD" ]; then
+        exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD";
+      else
+        exec redis-server --appendonly yes;
+      fi
+      '
+    environment:
+      TZ: ${TZ}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ${REDIS_DATA_DIR}:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  manager-api:
+    build:
+      context: ../../main/manager-api
+    container_name: xiaozhi-manager-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_DRUID_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=${MYSQL_TIMEZONE}&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
+      SPRING_DATASOURCE_DRUID_USERNAME: root
+      SPRING_DATASOURCE_DRUID_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    ports:
+      - "${MANAGER_API_PORT:-8002}:8002"
+    volumes:
+      - ${UPLOADFILE_DIR}:/uploadfile
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8002/xiaozhi/user/pub-config >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  manager-web:
+    build:
+      context: ../../main/manager-web
+    container_name: xiaozhi-manager-web
+    restart: unless-stopped
+    depends_on:
+      manager-api:
+        condition: service_healthy
+    ports:
+      - "${MANAGER_WEB_PORT:-8001}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  xiaozhi-server:
+    build:
+      context: ../../main/xiaozhi-server
+    container_name: xiaozhi-server
+    restart: unless-stopped
+    depends_on:
+      manager-api:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+    security_opt:
+      - seccomp:unconfined
+    ports:
+      - "${XIAOZHI_WS_PORT:-8000}:8000"
+      - "${XIAOZHI_HTTP_PORT:-8003}:8003"
+    volumes:
+      - ${XIAOZHI_DATA_DIR}:/opt/xiaozhi-esp32-server/data
+      - ${XIAOZHI_MODELS_DIR}:/opt/xiaozhi-esp32-server/models
+      - ${XIAOZHI_MUSIC_DIR}:/opt/xiaozhi-esp32-server/music

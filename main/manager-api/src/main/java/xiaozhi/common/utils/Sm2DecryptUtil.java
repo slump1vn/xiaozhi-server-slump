@@ -29,19 +29,7 @@ public class Sm2DecryptUtil {
      */
     public static String decryptAndValidateCaptcha(String encryptedPassword, String captchaId,
             CaptchaService captchaService, SysParamsService sysParamsService) {
-        // 获取SM2私钥
-        String privateKeyStr = sysParamsService.getValue(Constant.SM2_PRIVATE_KEY, true);
-        if (StringUtils.isBlank(privateKeyStr)) {
-            throw new RenException(ErrorCode.SM2_KEY_NOT_CONFIGURED);
-        }
-
-        // 使用SM2私钥解密密码
-        String decryptedContent;
-        try {
-            decryptedContent = SM2Utils.decrypt(privateKeyStr, encryptedPassword);
-        } catch (Exception e) {
-            throw new RenException(ErrorCode.SM2_DECRYPT_ERROR);
-        }
+        String decryptedContent = decryptPassword(encryptedPassword, sysParamsService);
 
         // 分离验证码和密码：前5位是验证码，后面是密码
         if (decryptedContent.length() > CAPTCHA_LENGTH) {
@@ -57,6 +45,22 @@ public class Sm2DecryptUtil {
         } else if (decryptedContent.length() > 0) {
             throw new RenException(ErrorCode.SMS_CAPTCHA_ERROR);
         } else {
+            throw new RenException(ErrorCode.SM2_DECRYPT_ERROR);
+        }
+    }
+
+    public static String decryptPassword(String encryptedPassword, SysParamsService sysParamsService) {
+        // 获取SM2私钥
+        String privateKeyStr = sysParamsService.getValue(Constant.SM2_PRIVATE_KEY, true);
+        if (StringUtils.isBlank(privateKeyStr)) {
+            throw new RenException(ErrorCode.SM2_KEY_NOT_CONFIGURED);
+        }
+
+        // 使用SM2私钥解密密码
+        String decryptedContent;
+        try {
+            return SM2Utils.decrypt(privateKeyStr, encryptedPassword);
+        } catch (Exception e) {
             throw new RenException(ErrorCode.SM2_DECRYPT_ERROR);
         }
     }

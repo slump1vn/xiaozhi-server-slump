@@ -89,13 +89,7 @@ public class LoginController {
     @PostMapping("/login")
     @Operation(summary = "登录")
     public Result<TokenDTO> login(@RequestBody LoginDTO login) {
-        String password = login.getPassword();
-
-        // 使用工具类解密并验证验证码
-        String actualPassword = Sm2DecryptUtil.decryptAndValidateCaptcha(
-                password, login.getCaptchaId(), captchaService, sysParamsService);
-
-        login.setPassword(actualPassword);
+        login.setPassword(Sm2DecryptUtil.decryptPassword(login.getPassword(), sysParamsService));
 
         // 按照用户名获取用户
         SysUserDTO userDTO = sysUserService.getByUsername(login.getUsername());
