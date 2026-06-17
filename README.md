@@ -1,3 +1,9 @@
+> Fork 维护说明：
+> - 本仓库是 `slump1vn` 维护的派生版本。
+> - 已补充 `xiaozhi-server`、`manager-api`、`manager-web` 的 Docker 打包文件。
+> - Ubuntu on-prem 全量部署入口见 [deploy/onpremise/README.md](deploy/onpremise/README.md)。
+> - 当前还包含 manager 登录流程与部署相关调整，便于直接落地测试。
+
 [![Banners](docs/images/banner1.png)](https://github.com/xinnan-tech/xiaozhi-esp32-server)
 
 <h1 align="center">小智后端服务xiaozhi-esp32-server</h1>

@@ -1,3 +1,9 @@
+> Fork notes:
+> - This repository is the `slump1vn` maintained fork.
+> - It adds Docker packaging for `xiaozhi-server`, `manager-api`, and `manager-web`.
+> - Ubuntu on-prem deployment starts at [deploy/onpremise/README.md](../deploy/onpremise/README.md).
+> - It also carries local manager/login and deployment-oriented adjustments for direct testing.
+
 # Technical Documentation: `xiaozhi-esp32-server`
 
 **Table of Contents:**
